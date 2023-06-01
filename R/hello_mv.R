@@ -14,6 +14,7 @@ fried_sim <- mlbench::mlbench.friedman1(n = n_,sd = sd_)
 friedman_no_interaction <- function (n, sd = 1)
 {
         x <- matrix(runif(1 * n), ncol = 1)
+        # x <- matrix(runif(5 * n), ncol = 5)
         # y <- 10 * sin(pi * x[, 1]*x[, 2] )
         # y <- y + 20 * (x[, 3] - 0.5)^2 + 10 * x[, 4] + 5 * x[, 5]
         y <- 20 * (x[, 1] - 0.5)^2
@@ -38,7 +39,7 @@ x_test <- as.data.frame(x_new)
 
 # Testing the mpsBART
 bart_test <- rbart(x_train = x,y = unlist(c(y)),x_test = x_test,
-                   n_tree = 3,n_mcmc = 2500,alpha = 0.95,
+                   n_tree = 1,n_mcmc = 2500,alpha = 0.95,
                    dif_order = 0,
                    beta = 2,nIknots = 5,delta = 1,
                    a_delta = 0.0001,d_delta = 0.0001,nu = 2,
@@ -70,6 +71,6 @@ plot(bartmod$yhat.test.mean,rowMeans(bart_test$y_hat_test))
 plot(bartmod$yhat.train.mean,rowMeans(bart_test$y_hat))
 
 # col_zero_two <- apply(x_train[,-1],1,sum)
-# plot(x$V1,y)
-# points(x_test$V1,bartmod$yhat.test.mean,col = "blue")
-# points(x_test$V1,bart_test$y_hat_test %>% rowMeans(),col = "orange")
+plot(x$V1,y)
+points(x_test$V1,bartmod$yhat.test.mean,col = "blue")
+points(x_test$V1,bart_test$y_hat_test %>% rowMeans(),col = "orange")

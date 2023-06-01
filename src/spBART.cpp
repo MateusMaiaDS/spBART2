@@ -642,7 +642,7 @@ void grow(Node* tree, modelParam &data, arma::vec &curr_res){
         }
 
         // Keeping the new tree or not
-        if(rand_unif () < (-1)*acceptance){
+        if(rand_unif () < acceptance){
                 // Do nothing just keep the new tree
                 // cout << " ACCEPTED" << endl;
 
@@ -1277,15 +1277,6 @@ void updateBeta(Node* tree, modelParam &data){
                 }
 
 
-
-                // arma::mat B_j_beta(t_nodes[i]->n_leaf,data.d_var,arma::fill::zeros);
-                // // cout << "Dimensions of B are: " << t_nodes[i]->B.n_rows << " " <<  t_nodes[i]->B.n_cols << " " <<  t_nodes[i]->B.n_slices << endl;
-                // for(int k = 0; k<data.d_var;k++){
-                //         B_j_beta.col(k) = t_nodes[i]->B.slice(k)*t_nodes[i]->betas.col(k);
-                // }
-                //
-                // cout << "Dimension of B: " << t_nodes[i]->B.n_rows << " " << t_nodes[i]->B.n_cols << " " <<t_nodes[i]->B.n_slices << endl;
-
                 // Iterating over each predictor
                 for(int j=0;j<data.d_var;j++){
 
@@ -1298,7 +1289,7 @@ void updateBeta(Node* tree, modelParam &data){
 
                                 // Getting the sum element
                                 for(int k = 0; k < data.d_var; k++){
-                                        if(k == j){ // Doing for all that doesn't contain B
+                                        if((k == j) || (t_nodes[i]->ancestors(k)==0)){ // Doing for all that doesn't contain B
                                                 continue;
                                         }
                                         cov_sum_aux = cov_sum_aux + t_nodes[i]->B.slice(k)*t_nodes[i]->betas.col(k);
@@ -1321,7 +1312,7 @@ void updateBeta(Node* tree, modelParam &data){
                                 // cout << "Error sample BETA" << endl;
                                 arma::mat sample = arma::randn<arma::mat>(t_nodes[i]->betas.n_rows);
                                 // cout << "Error variance" << endl;
-                                t_nodes[i]->betas.col(j) = arma::chol(beta_cov,"lower")*sample + beta_mean;
+                                t_nodes[i]->betas.col(j) = arma::chol(beta_cov+arma::eye(size(beta_cov))*1e-12,"lower")*sample + beta_mean;
                                 // cout << "Beta " << j << " values: ";
                                 // for(int u = 0; u<t_nodes[i]->betas.n_rows;u++){
                                 //         cout << t_nodes[i]->betas(u,j) << " ";
@@ -1660,7 +1651,7 @@ Rcpp::List sbart(arma::mat x_train,
         double pb = 0;
 
 
-        // cout << " Error one " << endl;
+        cout << " Error one " << endl;
 
         // Selecting the train
         Forest all_forest(data);
@@ -1713,33 +1704,33 @@ Rcpp::List sbart(arma::mat x_train,
                         // verb = 0.27;
                         // Selecting the verb
                         if(verb < 0.3){
-                                // cout << " Grow error" << endl;
+                                cout << " Grow error" << endl;
                                 grow(all_forest.trees[t],data,partial_residuals);
                         } else if(verb>=0.3 & verb <0.6) {
-                                // cout << " Prune error" << endl;
+                                cout << " Prune error" << endl;
                                 prune(all_forest.trees[t], data, partial_residuals);
                         } else {
-                                // cout << " Change error" << endl;
+                                cout << " Change error" << endl;
                                 change(all_forest.trees[t], data, partial_residuals);
-                                // std::cout << "Error after change" << endl;
+                                std::cout << "Error after change" << endl;
                         }
 
 
                         // Updating the all the parameters
-                        // cout << "Error on Beta" << endl;
+                        cout << "Error on Beta" << endl;
                         updateBeta(all_forest.trees[t], data);
-                        // cout << "Error on Gamma" << endl;
+                        cout << "Error on Gamma" << endl;
 
                         if(data.intercept_model){
                                 updateGamma(all_forest.trees[t],data);
                         }
 
                         // Getting predictions
-                        // cout << " Error on Get Predictions" << endl;
+                        cout << " Error on Get Predictions" << endl;
                         getPredictions(all_forest.trees[t],data,y_hat,prediction_test);
 
                         // Updating the tree
-                        // cout << "Residuals error 2.0"<< endl;
+                        cout << "Residuals error 2.0"<< endl;
                         tree_fits_store.col(t) = y_hat;
                         // cout << "Residuals error 3.0"<< endl;
                         tree_fits_store_test.col(t) = prediction_test;
@@ -1758,9 +1749,9 @@ Rcpp::List sbart(arma::mat x_train,
                 updateTauB(all_forest,data);
                 // updateTauBintercept(all_forest,data,a_tau_b,d_tau_b);
 
-                // std::cout << "Error Delta: " << data.delta << endl;
+                std::cout << "Error Delta: " << data.delta << endl;
                 updateDelta(data);
-                // std::cout << "Error Tau: " << data.tau<< endl;
+                std::cout << "Error Tau: " << data.tau<< endl;
                 updateTau(prediction_train_sum, data);
 
                 // std::cout << " All good " << endl;
