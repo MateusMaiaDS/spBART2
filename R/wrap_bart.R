@@ -247,6 +247,8 @@ rbart <- function(x_train,
 
      }
 
+     tree_list <- as.data.frame(bart_obj[[8]])
+     colnames(tree_list) <- c("tree","mcmc_iter","n_nodes","n_terminal","depth",paste0("x.",1:ncol(x_train)))
      # Return the list with all objects and parameters
      return(list(y_hat = y_train_post,
                  y_hat_test = y_test_post,
@@ -265,7 +267,8 @@ rbart <- function(x_train,
                  data = list(x_train = x_train,
                              y = y,
                              x_test = x_test,
-                             grow_accept = bart_obj[[7]])))
+                             grow_accept = bart_obj[[7]],
+                             tree_list = tree_list)))
 }
 
 

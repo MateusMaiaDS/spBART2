@@ -44,6 +44,9 @@ struct modelParam {
         // Create a boolean to only use stumps
         bool stump;
 
+        // Creating the tree matrix
+        arma::mat tree_mcmc_matrix;
+
         // Defining the constructor for the model param
         modelParam(arma::mat x_train_,
                    arma::vec y_,

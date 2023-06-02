@@ -230,6 +230,9 @@ modelParam::modelParam(arma::mat x_train_,
         intercept_model = intercept_model_; // Checking if the model includes a intercept or not
         stump = stump_; // Checking if only restrict the model to stumps
 
+        // Initialising the multiple trees
+        tree_mcmc_matrix = arma::mat(n_mcmc*n_tree,5+x_train_.n_cols,arma::fill::zeros);
+
 }
 
 // Initialising a node
@@ -244,7 +247,7 @@ Node::Node(modelParam &data){
         train_index.fill(-1);
         test_index.fill(-1);
 
-        // Initializing the ancerstors vector
+        // Initializing the ancestors vector
         ancestors = arma::vec(data.x_train.n_cols,arma::fill::zeros);
 
         // Initializing those vectors
@@ -270,7 +273,7 @@ Node::Node(modelParam &data){
 
 
         // Initialising all the parameters
-        betas = arma::mat(data.p,data.d_var,arma::fill::ones);
+        betas = arma::mat(data.p,data.d_var,arma::fill::zeros);
 
 
 }
@@ -325,7 +328,7 @@ void Node::addingLeaves(modelParam& data){
      left -> r_sum = 0.0;
      left -> log_likelihood = 0.0;
      left -> n_leaf = 0.0;
-     left -> depth = depth+1;
+     left -> depth = this->depth+1;
      left -> train_index = arma::zeros<arma::vec>(data.x_train.n_rows);
      left -> test_index = arma::zeros<arma::vec>(data.x_test.n_rows);
      left -> train_index.fill(-1);
@@ -346,7 +349,7 @@ void Node::addingLeaves(modelParam& data){
      right -> r_sum = 0.0;
      right -> log_likelihood = 0.0;
      right -> n_leaf = 0.0;
-     right -> depth = depth+1;
+     right -> depth = this->depth+1;
      right -> train_index = arma::zeros<arma::vec>(data.x_train.n_rows);
      right -> test_index = arma::zeros<arma::vec>(data.x_test.n_rows);
      right -> train_index.fill(-1);
@@ -456,7 +459,7 @@ void get_leaves(Node* x,  std::vector<Node*> &leaves_vec) {
 
 // Initialising a vector of nodes in a standard way
 std::vector<Node*> leaves(Node* x) {
-        std::vector<Node*> leaves_init(0); // Initialising a vector of a vector of pointers of nodes of size zero
+        std::vector<Node*> leaves_init(0); // Initializing a vector of a vector of pointers of nodes of size zero
         get_leaves(x,leaves_init);
         return(leaves_init);
 }
@@ -1365,10 +1368,16 @@ void updateGamma(Node* tree, modelParam &data){
 void getPredictions(Node* tree,
                     modelParam &data,
                     arma::vec& current_prediction_train,
-                    arma::vec& current_prediction_test){
+                    arma::vec& current_prediction_test,
+                    int &mcmc_iter){
 
         // Getting the current prediction
         vector<Node*> t_nodes = leaves(tree);
+
+        // Creating a vector to store informations from those terminal nodes
+        arma::vec t_dept(t_nodes.size());
+        arma::vec t_ancestors(data.x_train.n_cols,arma::fill::zeros);
+
         for(int i = 0; i<t_nodes.size();i++){
 
                 // Skipping empty nodes
@@ -1447,6 +1456,22 @@ void getPredictions(Node* tree,
 
                 }
 
+                // Seeing which ancestors are in the tre
+                for(int j = 0; j < data.x_train.n_cols; j++){
+                        if(t_nodes[i]->ancestors[j]==1){
+                                t_ancestors[j] = 1;
+                        }
+                }
+                t_dept[i] = t_nodes[i]->depth;
+        }
+
+        // Storing informations of the tree
+        data.tree_mcmc_matrix(mcmc_iter,2) = 0;
+        data.tree_mcmc_matrix(mcmc_iter,3) = t_nodes.size();
+        data.tree_mcmc_matrix(mcmc_iter,4) = max(t_dept);
+
+        for(int j = 0; j< data.x_train.n_cols; j++){
+                data.tree_mcmc_matrix(mcmc_iter,5+j) = t_ancestors(j);
         }
 }
 
@@ -1656,7 +1681,9 @@ Rcpp::List sbart(arma::mat x_train,
         // Selecting the train
         Forest all_forest(data);
 
-        for(int i = 0;i<data.n_mcmc;i++){
+        int tree_mcmc_counter = 0;
+
+        for(int mcmc_iter = 0;mcmc_iter<data.n_mcmc;mcmc_iter++){
 
                 // Initialising PB
                 std::cout << "[";
@@ -1704,33 +1731,36 @@ Rcpp::List sbart(arma::mat x_train,
                         // verb = 0.27;
                         // Selecting the verb
                         if(verb < 0.3){
-                                cout << " Grow error" << endl;
+                                // cout << " Grow error" << endl;
                                 grow(all_forest.trees[t],data,partial_residuals);
                         } else if(verb>=0.3 & verb <0.6) {
-                                cout << " Prune error" << endl;
+                                // cout << " Prune error" << endl;
                                 prune(all_forest.trees[t], data, partial_residuals);
                         } else {
-                                cout << " Change error" << endl;
+                                // cout << " Change error" << endl;
                                 change(all_forest.trees[t], data, partial_residuals);
-                                std::cout << "Error after change" << endl;
+                                // std::cout << "Error after change" << endl;
                         }
 
 
                         // Updating the all the parameters
-                        cout << "Error on Beta" << endl;
+                        // cout << "Error on Beta" << endl;
                         updateBeta(all_forest.trees[t], data);
-                        cout << "Error on Gamma" << endl;
+                        // cout << "Error on Gamma" << endl;
 
                         if(data.intercept_model){
                                 updateGamma(all_forest.trees[t],data);
                         }
 
                         // Getting predictions
-                        cout << " Error on Get Predictions" << endl;
-                        getPredictions(all_forest.trees[t],data,y_hat,prediction_test);
+                        // cout << " Error on Get Predictions" << endl;
+                        getPredictions(all_forest.trees[t],data,y_hat,prediction_test,tree_mcmc_counter);
+                        data.tree_mcmc_matrix(tree_mcmc_counter,0) = t;
+                        data.tree_mcmc_matrix(tree_mcmc_counter,1) = mcmc_iter;
+                        tree_mcmc_counter++;
 
                         // Updating the tree
-                        cout << "Residuals error 2.0"<< endl;
+                        // cout << "Residuals error 2.0"<< endl;
                         tree_fits_store.col(t) = y_hat;
                         // cout << "Residuals error 3.0"<< endl;
                         tree_fits_store_test.col(t) = prediction_test;
@@ -1746,16 +1776,16 @@ Rcpp::List sbart(arma::mat x_train,
 
                 // Updating the Tau
                 // std::cout << "Error TauB: " << data.tau_b << endl;
-                updateTauB(all_forest,data);
+                // updateTauB(all_forest,data);
                 // updateTauBintercept(all_forest,data,a_tau_b,d_tau_b);
 
-                std::cout << "Error Delta: " << data.delta << endl;
+                // std::cout << "Error Delta: " << data.delta << endl;
                 updateDelta(data);
-                std::cout << "Error Tau: " << data.tau<< endl;
+                // std::cout << "Error Tau: " << data.tau<< endl;
                 updateTau(prediction_train_sum, data);
 
                 // std::cout << " All good " << endl;
-                if(i >= n_burn){
+                if(mcmc_iter >= n_burn){
                         // Storing the predictions
                         y_train_hat_post.col(curr) = prediction_train_sum;
                         y_test_hat_post.col(curr) = prediction_test_sum;
@@ -1792,7 +1822,8 @@ Rcpp::List sbart(arma::mat x_train,
                                   all_tree_post,
                                   tau_b_post,
                                   tau_b_post_intercept,
-                                  data.grow_accept);
+                                  data.grow_accept,
+                                  data.tree_mcmc_matrix);
 }
 
 
