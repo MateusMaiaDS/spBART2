@@ -555,7 +555,7 @@ void grow(Node* tree, modelParam &data, arma::vec &curr_res){
 
 
         // Selecting a rule
-        g_node->var_split_rule = (g_node->upper-g_node->lower)*rand_unif()+g_node->lower;
+        g_node->var_split_rule = (g_node->upper-g_node->lower)*arma::randu(arma::distr_param(0.0,1.0))+g_node->lower;
 
         // Create an aux for the left and right index
         int train_left_counter = 0;
@@ -719,7 +719,7 @@ void prune(Node* tree, modelParam&data, arma::vec &curr_res){
         // Calculating the acceptance
         double acceptance = exp(new_tree_log_like - tree_log_like + transition_loglike + tree_prior);
 
-        if(rand_unif()<acceptance){
+        if(arma::randu(arma::distr_param(0.0,1.0))<acceptance){
                 p_node->deletingLeaves();
         } else {
                 // p_node->left->splineNodeLogLike(data, curr_res);
@@ -817,7 +817,7 @@ void change(Node* tree, modelParam &data, arma::vec &curr_res){
         // Updating the limits
         c_node->getLimits();
         // Selecting a rule
-        c_node -> var_split_rule = (c_node->upper-c_node->lower)*rand_unif()+c_node->lower;
+        c_node -> var_split_rule = (c_node->upper-c_node->lower)*arma::randu(arma::distr_param(0.0,1.0))+c_node->lower;
         // c_node -> var_split_rule = 0.0;
 
         // Create an aux for the left and right index
@@ -923,7 +923,7 @@ void change(Node* tree, modelParam &data, arma::vec &curr_res){
 
         double acceptance = exp(new_tree_log_like);
 
-        if(rand_unif()<acceptance){
+        if(arma::randu(arma::distr_param(0.0,1.0))<acceptance){
 
                 // Need to update the new one and delete the previous
                 c_node->left->ancestors(old_var_split) = 0;
@@ -1060,7 +1060,7 @@ void change(Node* tree, modelParam &data, arma::vec &curr_res){
 //         // Updating the limits
 //         c_node->getLimits();
 //         // Selecting a rule
-//         c_node -> var_split_rule = (c_node->upper-c_node->lower)*rand_unif()+c_node->lower;
+//         c_node -> var_split_rule = (c_node->upper-c_node->lower)*arma::randu(arma::distr_param(0.0,1.0))+c_node->lower;
 //         // c_node -> var_split_rule = 0.0;
 //
 //         // Create an aux for the left and right index
@@ -1129,7 +1129,7 @@ void change(Node* tree, modelParam &data, arma::vec &curr_res){
 //
 //         double acceptance = exp(new_tree_log_like);
 //
-//         if(rand_unif()<acceptance){
+//         if(arma::randu(arma::distr_param(0.0,1.0))<acceptance){
 //                 // Keep all the treesi
 //         } else {
 //
@@ -1723,7 +1723,7 @@ Rcpp::List sbart(arma::mat x_train,
                         }
 
                         // Iterating over all trees
-                        verb = rand_unif();
+                        verb = arma::randu(arma::distr_param(0.0,1.0));
                         if(all_forest.trees[t]->isLeaf & all_forest.trees[t]->isRoot){
                                 verb = 0.27;
                         }
