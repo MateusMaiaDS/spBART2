@@ -1,3 +1,7 @@
+## GP-Bart
+#' @useDynLib spBART2
+#' @importFrom Rcpp sourceCpp
+#'
 # Getting the BART wrapped function
 #' @export
 rbart <- function(x_train,
