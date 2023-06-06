@@ -107,9 +107,8 @@ rbart <- function(x_train,
 
      # New_knots
      new_knots <- matrix()
-     # print(min_x)
-     # print(max_x)
      new_knots <- mapply(min_x,max_x, FUN = function(MIN,MAX){seq(from = MIN-3*dx, to = MAX+3*dx, by = dx)})
+
      # print(new_knots)
      # Creating the natural B-spline for each predictor
      for(i in 1:length(continuous_vars)){
@@ -146,7 +145,7 @@ rbart <- function(x_train,
      # Scaling "y"
      if(scale_bool){
         y_scale <- normalize_bart(y = y,a = min_y,b = max_y)
-        tau_b_0 <- 100000*(4*n_tree*(kappa^2))
+        tau_b_0 <- (4*n_tree*(kappa^2))
         tau_b <- tau_mu <- (4*n_tree*(kappa^2))
         # tau_b <- tau_mu <- 0.1
 
