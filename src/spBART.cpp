@@ -1676,7 +1676,7 @@ Rcpp::List sbart(arma::mat x_train,
         double pb = 0;
 
 
-        cout << " Error one " << endl;
+        // cout << " Error one " << endl;
 
         // Selecting the train
         Forest all_forest(data);

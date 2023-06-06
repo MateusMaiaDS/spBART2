@@ -102,7 +102,6 @@ rbart <- function(x_train,
      # Setting new parameters for the spline
      ndx <- nIknots
      dx <- 1/ndx
-
      # New_knots
      new_knots <- matrix()
      # new_knots <- mapply(min_x,max_x, FUN = function(MIN,MAX){seq(from = MIN-3*dx, to = MAX+3*dx, by = dx)}) # MIN and MAX are 0 and 1 respectively, because of the scale
