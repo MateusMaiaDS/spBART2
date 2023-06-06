@@ -66,7 +66,6 @@ rbart <- function(x_train,
      for(i in 1:ncol(x_train)){
              x_train_scale[,i] <- normalize_covariates_bart(y = x_train_scale[,i],a = x_min[i], b = x_max[i])
              x_test_scale[,i] <- normalize_covariates_bart(y = x_test_scale[,i],a = x_min[i], b = x_max[i])
-             # print(range(x_train_scale[,i]))
      }
 
 
@@ -82,7 +81,6 @@ rbart <- function(x_train,
      # knots <- apply(x_train_scale,
      #                2,
      #                function(x){quantile(x,seq(0,1,length.out = nIknots+2))[-c(1,nIknots+2)]})
-
      knots <- apply(x_train_scale,
                     2,
                     function(x){seq(min(x),max(x),length.out = nIknots)})
@@ -107,7 +105,9 @@ rbart <- function(x_train,
 
      # New_knots
      new_knots <- matrix()
-     new_knots <- mapply(min_x,max_x, FUN = function(MIN,MAX){seq(from = MIN-3*dx, to = MAX+3*dx, by = dx)})
+     # new_knots <- mapply(min_x,max_x, FUN = function(MIN,MAX){seq(from = MIN-3*dx, to = MAX+3*dx, by = dx)}) # MIN and MAX are 0 and 1 respectively, because of the scale
+     new_knots <- matrix(mapply(min_x,max_x, FUN = function(MIN,MAX){seq(from = -3*dx, to = 1+3*dx, by = dx)}), ncol = length(continuous_vars)) # MIN and MAX are 0 and 1 respectively, because of the scale
+     colnames(new_knots) <- continuous_vars
 
      # print(new_knots)
      # Creating the natural B-spline for each predictor
@@ -118,7 +118,7 @@ rbart <- function(x_train,
              B_train_obj <- splines::spline.des(x = x_train_scale[,continuous_vars[i], drop = FALSE],
                                                 knots = new_knots[,continuous_vars[i]],
                                                 ord = 4,
-                                                derivs = 0*x_train_scale[,continuous_vars[i], drop = FALSE],outer.ok = TRUE)$design
+                                                derivs = 0*x_train_scale[,continuous_vars[i], drop = FALSE],outer.ok = FALSE)$design
 
              B_train_arr[,,i] <- as.matrix(B_train_obj)
              # B_test_arr[,,i] <- as.matrix(predict(B_train_obj,newx = x_test_scale[,continuous_vars[i], drop = FALSE]))
@@ -129,10 +129,11 @@ rbart <- function(x_train,
 
      }
 
-     # plot(x_train_scale, B_train_obj[,1], ylim = range(B_train_obj), type = 'n',
+     # Plotting the basis
+     # plot(x_train_scale[,1], B_train_arr[,1,1], ylim = range(B_train_obj), type = 'n',
      #      ylab = "B")
      # for(j in 1:ncol(B_train_obj)) {
-     #         points(x_train_scale, B_train_obj[,j], col = j)
+     #         points(x_train_scale[,1], B_train_obj[,j], col = j)
      # }
 
      # R-th difference order matrix
