@@ -66,7 +66,7 @@ rbart <- function(x_train,
      for(i in 1:ncol(x_train)){
              x_train_scale[,i] <- normalize_covariates_bart(y = x_train_scale[,i],a = x_min[i], b = x_max[i])
              x_test_scale[,i] <- normalize_covariates_bart(y = x_test_scale[,i],a = x_min[i], b = x_max[i])
-             print(range(x_train_scale[,i]))
+             # print(range(x_train_scale[,i]))
      }
 
 
